@@ -12,4 +12,4 @@ pub use models::Models;
 pub use api::Api;
 pub use api::ChatBuilder;
 pub use api::ChatBuilderMessage;
-pub use api::Parameters;
+pub use api::PresetParameter;
