@@ -3,6 +3,7 @@
 import asyncio
 from chat.chat_api import ChatApi
 from chat.chat_builder import ChatBuilder
+
 from models.text_generation.deepinfra.meta_llama import LLAMA3_1_8B_INSTRUCT_TURBO
 
 
@@ -16,9 +17,10 @@ async def main():
     chat = ChatBuilder(model=LLAMA3_1_8B_INSTRUCT_TURBO)
 
     chat.add_system_message("You are a helpful assistant.")
-    chat.add_user_message("Hi, write a poem about stars")
+    chat.add_user_message("Hi, what can you do")
 
-    await chat_api.send_chat(chat, as_stream=True)
+    async for stream_response in chat_api.send_chat_stream(chat=chat):
+        print(stream_response.choices[0].delta.content)
 
 
 if __name__ == "__main__":
