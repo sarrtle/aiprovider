@@ -1,7 +1,6 @@
 """Chat api."""
 
 from collections.abc import AsyncGenerator
-from httpx import AsyncClient
 
 from chat.chat_builder import ChatBuilder
 from chat.schemas.normal_response import NormalResponse
@@ -9,34 +8,16 @@ from chat.schemas.stream_response import StreamResponse
 
 import json
 
+from utils.base_api import BaseApi
+from utils.common import get_deepinfra_browser_headers
 
-class ChatApi:
+
+class ChatApi(BaseApi):
     """ChatApi class."""
 
     def __init__(self):
         """Initialize ChatApi."""
-        self._api_key: str = ""
-        self._is_tor: bool = False
-        self._is_browser: bool = False
-        self._client: AsyncClient = AsyncClient()
-
-    def with_api_key(self, api_key: str) -> "ChatApi":
-        """With api key."""
-        self._api_key = api_key
-        return self
-
-    def use_tor(self) -> "ChatApi":
-        """Use tor."""
-        self._is_tor = True
-
-        # set up socks proxy
-        self._client = AsyncClient(proxy="socks5://127.0.0.1:9050")
-        return self
-
-    def as_browser(self) -> "ChatApi":
-        """As browser."""
-        self._is_browser = True
-        return self
+        super().__init__()
 
     async def send_chat(self, chat: ChatBuilder) -> NormalResponse:
         """Send chat."""
@@ -54,7 +35,7 @@ class ChatApi:
         # if simulating browser
         if self._is_browser:
             # set httpx header
-            headers = self._get_browser_headers()
+            headers = get_deepinfra_browser_headers()
 
         # with api keyss
         else:
@@ -97,7 +78,7 @@ class ChatApi:
         # if simulating browser
         if self._is_browser:
             # set httpx header
-            headers = self._get_browser_headers()
+            headers = get_deepinfra_browser_headers()
 
         # with api keyss
         else:
@@ -139,18 +120,3 @@ class ChatApi:
                     )
 
                     yield stream_response
-
-    def _get_browser_headers(self):
-        return {
-            "Content-Type": "application/json",
-            "Host": "api.deepinfra.com",
-            "Origin": "https://deepinfra.com",
-            "Pragma": "no-cache",
-            "Referer": "https://deepinfra.com/",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36",
-            "Priority": "u=0",
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-site",
-            "X-Deepinfra-Source": "model-embed",
-        }
