@@ -5,7 +5,7 @@ from collections.abc import AsyncGenerator
 
 from tts.schemas.tts_normal_response import TTSNormalResponse
 from utils.base_api import BaseApi
-from utils.common import convert_audio_to_base64, get_deepinfra_browser_headers
+from utils.common import convert_file_to_base64, get_deepinfra_browser_headers
 
 
 class TTSApi(BaseApi):
@@ -74,7 +74,7 @@ class TTSApi(BaseApi):
         payload: dict[str, object] = {}
         payload["max_audio_length_ms"] = 60000
         payload["response_format"] = "opus"
-        payload["speaker_audio"] = await convert_audio_to_base64(audio_to_clone)
+        payload["speaker_audio"] = await convert_file_to_base64(audio_to_clone)
         payload["speaker_transcript"] = audio_transcript
         payload["text"] = text
 

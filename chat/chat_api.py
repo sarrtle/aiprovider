@@ -24,7 +24,7 @@ class ChatApi(BaseApi):
         # construct payload
         payload: dict[str, object] = {
             "model": chat.model,
-            "messages": [message.__dict__ for message in chat.messages],
+            "messages": [message.model_dump() for message in chat.messages],
         }
         for param_key, param_value in chat.parameters.value.items():
             payload[param_key] = param_value
@@ -50,9 +50,7 @@ class ChatApi(BaseApi):
 
         # streaming
         response = await self._client.post(
-            url,
-            headers=headers,
-            json=payload,
+            url, headers=headers, json=payload, timeout=300
         )
 
         return NormalResponse.model_validate(response.json())
@@ -64,7 +62,7 @@ class ChatApi(BaseApi):
         # construct payload
         payload: dict[str, object] = {
             "model": chat.model,
-            "messages": [message.__dict__ for message in chat.messages],
+            "messages": [message.model_dump() for message in chat.messages],
         }
         for param_key, param_value in chat.parameters.value.items():
             payload[param_key] = param_value
@@ -89,7 +87,6 @@ class ChatApi(BaseApi):
 
         # send request
         url: str = "https://api.deepinfra.com/v1/openai/chat/completions"
-
         async with self._client.stream(
             "POST",
             url,

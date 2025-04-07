@@ -1,16 +1,20 @@
 """Main application."""
 
 import asyncio
+
 from chat.chat_api import ChatApi
 from chat.chat_builder import ChatBuilder
 
-from models.text_generation.deepinfra.meta_llama import LLAMA3_1_8B_INSTRUCT_TURBO
+from models.vision.deepinfra.meta_llama import LLAMA4_MAVERICK_17B_128E_INSTRUCT_FP8
 
 # from models.tts.deepinfra.kokoro import KOKORO
 # from models.tts.deepinfra.canopylabs import ORPHEUS_3B
 from models.tts.deepinfra.sesame import SESAME
 from tts.tts_api import TTSApi
-from utils.common import save_tts_to_file
+from utils.common import (
+    convert_file_to_base64,
+    save_tts_to_file,
+)
 
 
 async def test_chat():
@@ -20,13 +24,19 @@ async def test_chat():
     # use with api key
     # chat_api = ChatApi().with_api_key("YOUR_API_KEY")
 
-    chat = ChatBuilder(model=LLAMA3_1_8B_INSTRUCT_TURBO)
+    chat = ChatBuilder(model=LLAMA4_MAVERICK_17B_128E_INSTRUCT_FP8)
 
     chat.add_system_message("You are a helpful assistant.")
-    chat.add_user_message("Hi, what can you do")
 
-    async for stream_response in chat_api.send_chat_stream(chat=chat):
-        print(stream_response.choices[0].delta.content)
+    image = await convert_file_to_base64("test.png")
+
+    chat.add_user_message(
+        "what are the clickable elements on this image. Can you put them in a list on this format [{'text': name-of-element, 'coords': [x1, y1, x2, y2]}, {and so on}] without explanation and they should be in floats like 0.532...",
+        image_as_base64=image,
+    )
+
+    response = await chat_api.send_chat(chat)
+    print(response.choices[0].message.content)
 
 
 async def test_tts():
@@ -48,8 +58,8 @@ async def test_tts():
 
 async def main():
     """Application."""
-    # await test_chat()
-    await test_tts()
+    await test_chat()
+    # await test_tts()
 
 
 if __name__ == "__main__":

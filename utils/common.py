@@ -3,6 +3,7 @@
 import base64
 import mimetypes
 import aiofiles
+from httpx import Response
 
 
 def get_deepinfra_browser_headers():
@@ -29,7 +30,7 @@ async def save_tts_to_file(base64_audio: str, file_path: str):
         _ = await f.write(base64.b64decode(base64_data))
 
 
-async def convert_audio_to_base64(file_path: str) -> str:
+async def convert_file_to_base64(file_path: str) -> str:
     """Convert audio to base64."""
     mimetype, _ = mimetypes.guess_type(file_path)
     if not mimetype:
@@ -40,6 +41,22 @@ async def convert_audio_to_base64(file_path: str) -> str:
 
     base64_audio = (
         f"data:{mimetype};base64,{base64.b64encode(audio_bytes).decode('utf-8')}"
+    )
+
+    return base64_audio
+
+
+async def convert_response_to_base64(response: Response):
+    """Convert audio to base64."""
+    mimetype: str | None = response.headers.get("Content-Type", None)
+
+    if not mimetype:
+        raise ValueError(f"Could not determine mimetype for {response.url}")
+
+    response_bytes = response.read()
+
+    base64_audio = (
+        f"data:{mimetype};base64,{base64.b64encode(response_bytes).decode('utf-8')}"
     )
 
     return base64_audio

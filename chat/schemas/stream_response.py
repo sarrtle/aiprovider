@@ -35,16 +35,14 @@ class StreamResponseChoice(BaseModel):
 class StreamResponseDelta(BaseModel):
     """Delta model."""
 
-    role: Literal["assistant"]
-    content: str
+    role: Literal["assistant"] = "assistant"
+    content: str = ""
     tool_calls: list["StreamResponseToolCall"] | None = None
     logprobs: float | None = None
 
     @model_validator(mode="before")
-    def _validate_empty_delta(cls, values: dict[str, object]):
-        if "content" not in values:
-            values["content"] = ""
-        if "role" not in values:
+    def _role_should_not_be_null(cls, values: dict[str, object]):
+        if "role" in values and values["role"] is None:
             values["role"] = "assistant"
         return values
 
