@@ -2,15 +2,15 @@
 
 from collections.abc import AsyncGenerator
 
-from chat.chat_builder import ChatBuilder
-from chat.response import ChatResponse
-from chat.schemas.normal_response import NormalResponse
-from chat.schemas.stream_response import StreamResponse
+from aiprovider.chat.chat_builder import ChatBuilder
+from aiprovider.chat.response import ChatResponse
+from aiprovider.chat.schemas.normal_response import NormalResponse
+from aiprovider.chat.schemas.stream_response import StreamResponse
 
 import json
 
-from utils.base_api import BaseApi
-from utils.common import get_deepinfra_browser_headers
+from aiprovider.utils.base_api import BaseApi
+from aiprovider.utils.common import get_deepinfra_browser_headers
 
 
 class ChatApi(BaseApi):

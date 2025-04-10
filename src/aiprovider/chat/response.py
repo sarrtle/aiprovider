@@ -1,9 +1,9 @@
 """Base response object simplified."""
 
 from typing import Literal
-from chat.schemas.normal_response import NormalResponseToolCall
-from chat.schemas.stream_response import StreamResponseToolCall
-from chat.tool import Tool
+from aiprovider.chat.schemas.normal_response import NormalResponseToolCall
+from aiprovider.chat.schemas.stream_response import StreamResponseToolCall
+from aiprovider.chat.tool import Tool
 
 
 class ChatResponse:

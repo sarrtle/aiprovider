@@ -1,9 +1,9 @@
 """Handles and builds chat messages."""
 
 from typing import Literal
-from chat.message import ImageContent, ImageUrl, Message, TextContent
-from chat.preset_parameters import PresetParameters
-from chat.tool import Tool
+from aiprovider.chat.message import ImageContent, ImageUrl, Message, TextContent
+from aiprovider.chat.preset_parameters import PresetParameters
+from aiprovider.chat.tool import Tool
 
 
 class ChatBuilder:

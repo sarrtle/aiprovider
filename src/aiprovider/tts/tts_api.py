@@ -3,9 +3,12 @@
 from collections.abc import AsyncGenerator
 
 
-from tts.schemas.tts_normal_response import TTSNormalResponse
-from utils.base_api import BaseApi
-from utils.common import convert_file_to_base64, get_deepinfra_browser_headers
+from aiprovider.tts.schemas.tts_normal_response import TTSNormalResponse
+from aiprovider.utils.base_api import BaseApi
+from aiprovider.utils.common import (
+    convert_file_to_base64,
+    get_deepinfra_browser_headers,
+)
 
 
 class TTSApi(BaseApi):
