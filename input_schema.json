@@ -1,0 +1,552 @@
+{
+    "title": "OpenAIChatCompletionsIn",
+    "type": "object",
+    "properties": {
+        "model": {
+            "title": "Model",
+            "description": "model name",
+            "example": "meta-llama/Llama-2-70b-chat-hf",
+            "type": "string"
+        },
+        "messages": {
+            "title": "Messages",
+            "description": "conversation messages: (user,assistant,tool)*,user including one system message anywhere",
+            "type": "array",
+            "items": {
+                "anyOf": [
+                    {
+                        "$ref": "#/definitions/ChatCompletionToolMessage"
+                    },
+                    {
+                        "$ref": "#/definitions/ChatCompletionAssistantMessage"
+                    },
+                    {
+                        "$ref": "#/definitions/ChatCompletionUserMessage"
+                    },
+                    {
+                        "$ref": "#/definitions/ChatCompletionSystemMessage"
+                    }
+                ]
+            }
+        },
+        "stream": {
+            "title": "Stream",
+            "description": "whether to stream the output via SSE or return the full response",
+            "default": false,
+            "type": "boolean"
+        },
+        "temperature": {
+            "title": "Temperature",
+            "description": "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic",
+            "default": 1,
+            "minimum": 0,
+            "maximum": 2,
+            "type": "number"
+        },
+        "top_p": {
+            "title": "Top P",
+            "description": "An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered.",
+            "default": 1,
+            "exclusiveMinimum": 0,
+            "maximum": 1,
+            "type": "number"
+        },
+        "min_p": {
+            "title": "Min P",
+            "description": "Float that represents the minimum probability for a token to be considered, relative to the probability of the most likely token. Must be in [0, 1]. Set to 0 to disable this.",
+            "default": 0,
+            "minimum": 0,
+            "maximum": 1,
+            "type": "number"
+        },
+        "top_k": {
+            "title": "Top K",
+            "description": "Sample from the best k (number of) tokens. 0 means off",
+            "default": 0,
+            "exclusiveMaximum": 1000,
+            "minimum": 0,
+            "type": "integer"
+        },
+        "max_tokens": {
+            "title": "Max Tokens",
+            "description": "The maximum number of tokens to generate in the chat completion.\n\nThe total length of input tokens and generated tokens is limited by the model's context length. If explicitly set to None it will be the model's max context length minus input length or 8192, whichever is smaller.",
+            "minimum": 0,
+            "maximum": 1000000,
+            "type": "integer"
+        },
+        "stop": {
+            "title": "Stop",
+            "description": "up to 16 sequences where the API will stop generating further tokens",
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            ]
+        },
+        "n": {
+            "title": "N",
+            "description": "number of sequences to return",
+            "default": 1,
+            "minimum": 1,
+            "maximum": 4,
+            "type": "integer"
+        },
+        "presence_penalty": {
+            "title": "Presence Penalty",
+            "description": "Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.",
+            "default": 0,
+            "minimum": -2,
+            "maximum": 2,
+            "type": "number"
+        },
+        "frequency_penalty": {
+            "title": "Frequency Penalty",
+            "description": "Positive values penalize new tokens based on how many times they appear in the text so far, increasing the model's likelihood to talk about new topics.",
+            "default": 0,
+            "minimum": -2,
+            "maximum": 2,
+            "type": "number"
+        },
+        "tools": {
+            "title": "Tools",
+            "description": "A list of tools the model may call. Currently, only functions are supported as a tool.",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/ChatTools"
+            }
+        },
+        "tool_choice": {
+            "title": "Tool Choice",
+            "description": "Controls which (if any) function is called by the model. none means the model will not call a function and instead generates a message. auto means the model can pick between generating a message or calling a function. specifying a particular function choice is not supported currently.none is the default when no functions are present. auto is the default if functions are present.",
+            "type": "string"
+        },
+        "response_format": {
+            "title": "Response Format",
+            "description": "The format of the response. Currently, only json is supported.",
+            "allOf": [
+                {
+                    "$ref": "#/definitions/ResponseFormat"
+                }
+            ]
+        },
+        "repetition_penalty": {
+            "title": "Repetition Penalty",
+            "description": "Alternative penalty for repetition, but multiplicative instead of additive (> 1 penalize, < 1 encourage)",
+            "default": 1,
+            "minimum": 0.01,
+            "maximum": 5,
+            "type": "number"
+        },
+        "user": {
+            "title": "User",
+            "description": "A unique identifier representing your end-user, which can help monitor and detect abuse. Avoid sending us any identifying information. We recommend hashing user identifiers.",
+            "type": "string"
+        },
+        "seed": {
+            "title": "Seed",
+            "description": "Seed for random number generator. If not provided, a random seed is used. Determinism is not guaranteed.",
+            "exclusiveMaximum": 18446744073709552000,
+            "minimum": -9223372036854776000,
+            "type": "integer"
+        },
+        "logprobs": {
+            "title": "Logprobs",
+            "description": "Whether to return log probabilities of the output tokens or not.If true, returns the log probabilities of each output token returned in the `content` of `message`.",
+            "type": "boolean"
+        },
+        "stream_options": {
+            "title": "Stream Options",
+            "description": "streaming options",
+            "allOf": [
+                {
+                    "$ref": "#/definitions/StreamOptions"
+                }
+            ]
+        }
+    },
+    "required": [
+        "model",
+        "messages"
+    ],
+    "definitions": {
+        "ChatCompletionToolMessage": {
+            "title": "ChatCompletionToolMessage",
+            "type": "object",
+            "properties": {
+                "role": {
+                    "title": "Role",
+                    "description": "the role of the author of this message",
+                    "default": "tool",
+                    "enum": [
+                        "tool"
+                    ],
+                    "type": "string"
+                },
+                "content": {
+                    "title": "Content",
+                    "description": "the message content",
+                    "type": "string"
+                },
+                "tool_call_id": {
+                    "title": "Tool Call Id",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "content",
+                "tool_call_id"
+            ]
+        },
+        "Function": {
+            "title": "Function",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Name",
+                    "description": "the name of the function to call",
+                    "type": "string"
+                },
+                "arguments": {
+                    "title": "Arguments",
+                    "description": "the function arguments, generated by the model in JSON format. the model does not always generate valid JSON, and may hallucinate parameters not defined by your function schema",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name",
+                "arguments"
+            ]
+        },
+        "ChatCompletionMessageToolCall": {
+            "title": "ChatCompletionMessageToolCall",
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "Id",
+                    "description": "the id of the tool call",
+                    "type": "string"
+                },
+                "type": {
+                    "title": "Type",
+                    "description": "the type of the tool call. only function is supported currently",
+                    "type": "string"
+                },
+                "function": {
+                    "title": "Function",
+                    "description": "the function that the model called",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/Function"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "type",
+                "function"
+            ]
+        },
+        "ChatCompletionAssistantMessage": {
+            "title": "ChatCompletionAssistantMessage",
+            "type": "object",
+            "properties": {
+                "role": {
+                    "title": "Role",
+                    "description": "the role of the author of this message",
+                    "default": "assistant",
+                    "enum": [
+                        "assistant"
+                    ],
+                    "type": "string"
+                },
+                "content": {
+                    "title": "Content",
+                    "description": "the message content",
+                    "type": "string"
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                },
+                "tool_calls": {
+                    "title": "Tool Calls",
+                    "description": "the tool calls generated by the mode",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ChatCompletionMessageToolCall"
+                    }
+                }
+            }
+        },
+        "ChatCompletionContentPartText": {
+            "title": "ChatCompletionContentPartText",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "title": "Type",
+                    "enum": [
+                        "text"
+                    ],
+                    "type": "string"
+                },
+                "text": {
+                    "title": "Text",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "text"
+            ]
+        },
+        "ImageURL": {
+            "title": "ImageURL",
+            "type": "object",
+            "properties": {
+                "url": {
+                    "title": "Url",
+                    "type": "string"
+                },
+                "detail": {
+                    "title": "Detail",
+                    "default": "auto",
+                    "enum": [
+                        "auto",
+                        "low",
+                        "high"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "url"
+            ]
+        },
+        "ChatCompletionContentPartImage": {
+            "title": "ChatCompletionContentPartImage",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "title": "Type",
+                    "enum": [
+                        "image_url"
+                    ],
+                    "type": "string"
+                },
+                "image_url": {
+                    "$ref": "#/definitions/ImageURL"
+                }
+            },
+            "required": [
+                "type",
+                "image_url"
+            ]
+        },
+        "InputAudio": {
+            "title": "InputAudio",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "title": "Data",
+                    "type": "string"
+                },
+                "format": {
+                    "title": "Format",
+                    "default": "wav",
+                    "enum": [
+                        "wav",
+                        "mp3"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "data"
+            ]
+        },
+        "ChatCompletionContentPartAudio": {
+            "title": "ChatCompletionContentPartAudio",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "title": "Type",
+                    "enum": [
+                        "input_audio"
+                    ],
+                    "type": "string"
+                },
+                "input_audio": {
+                    "$ref": "#/definitions/InputAudio"
+                }
+            },
+            "required": [
+                "type",
+                "input_audio"
+            ]
+        },
+        "ChatCompletionUserMessage": {
+            "title": "ChatCompletionUserMessage",
+            "type": "object",
+            "properties": {
+                "role": {
+                    "title": "Role",
+                    "description": "the role of the author of this message",
+                    "default": "user",
+                    "enum": [
+                        "user"
+                    ],
+                    "type": "string"
+                },
+                "content": {
+                    "title": "Content",
+                    "description": "the message content",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/definitions/ChatCompletionContentPartText"
+                                    },
+                                    {
+                                        "$ref": "#/definitions/ChatCompletionContentPartImage"
+                                    },
+                                    {
+                                        "$ref": "#/definitions/ChatCompletionContentPartAudio"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "content"
+            ]
+        },
+        "ChatCompletionSystemMessage": {
+            "title": "ChatCompletionSystemMessage",
+            "type": "object",
+            "properties": {
+                "role": {
+                    "title": "Role",
+                    "description": "the role of the author of this message",
+                    "default": "system",
+                    "enum": [
+                        "system"
+                    ],
+                    "type": "string"
+                },
+                "content": {
+                    "title": "Content",
+                    "description": "the message content",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ChatCompletionContentPartText"
+                            }
+                        }
+                    ]
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "content"
+            ]
+        },
+        "FunctionDefinition": {
+            "title": "FunctionDefinition",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                },
+                "description": {
+                    "title": "Description",
+                    "type": "string"
+                },
+                "parameters": {
+                    "title": "Parameters",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "name"
+            ]
+        },
+        "ChatTools": {
+            "title": "ChatTools",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "title": "Type",
+                    "default": "function",
+                    "type": "string"
+                },
+                "function": {
+                    "$ref": "#/definitions/FunctionDefinition"
+                }
+            },
+            "required": [
+                "function"
+            ]
+        },
+        "ResponseFormat": {
+            "title": "ResponseFormat",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "title": "Type",
+                    "description": "Response type, such as JSON mode",
+                    "default": "text",
+                    "example": "json_object",
+                    "enum": [
+                        "text",
+                        "json_object"
+                    ],
+                    "type": "string"
+                }
+            }
+        },
+        "StreamOptions": {
+            "title": "StreamOptions",
+            "type": "object",
+            "properties": {
+                "include_usage": {
+                    "title": "Include Usage",
+                    "description": "whether to include usage data",
+                    "default": true,
+                    "type": "boolean"
+                },
+                "continuous_usage_stats": {
+                    "title": "Continuous Usage Stats",
+                    "description": "whether to include usage stats continuously with each streaming event",
+                    "default": false,
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}

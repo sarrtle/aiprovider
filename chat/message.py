@@ -27,5 +27,6 @@ class TextContent(BaseModel):
 class Message(BaseModel):
     """Message class."""
 
-    role: Literal["user", "assistant", "system"]
+    role: Literal["user", "assistant", "system", "tool"]
     content: str | list[ImageContent | TextContent]
+    tool_call_id: str | None = None

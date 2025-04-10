@@ -3,6 +3,7 @@
 from collections.abc import AsyncGenerator
 
 from chat.chat_builder import ChatBuilder
+from chat.response import ChatResponse
 from chat.schemas.normal_response import NormalResponse
 from chat.schemas.stream_response import StreamResponse
 
@@ -19,12 +20,16 @@ class ChatApi(BaseApi):
         """Initialize ChatApi."""
         super().__init__()
 
-    async def send_chat(self, chat: ChatBuilder) -> NormalResponse:
+    async def send_chat(self, chat: ChatBuilder) -> ChatResponse:
         """Send chat."""
         # construct payload
         payload: dict[str, object] = {
             "model": chat.model,
-            "messages": [message.model_dump() for message in chat.messages],
+            "messages": [
+                message.model_dump(exclude_none=True) for message in chat.messages
+            ],
+            "tools": chat.tools,
+            "tool_choice": chat.tool_choice,
         }
         for param_key, param_value in chat.parameters.value.items():
             payload[param_key] = param_value
@@ -53,16 +58,32 @@ class ChatApi(BaseApi):
             url, headers=headers, json=payload, timeout=300
         )
 
-        return NormalResponse.model_validate(response.json())
+        try:
+            normal_response: NormalResponse = NormalResponse.model_validate(
+                response.json()
+            )
+        except ValueError:
+            raise ValueError(
+                "Could not parse response: {}", json.dumps(response.json(), indent=4)
+            )
 
-    async def send_chat_stream(
-        self, chat: ChatBuilder
-    ) -> AsyncGenerator[StreamResponse]:
+        return ChatResponse(
+            content=normal_response.choices[0].message.content,
+            role=normal_response.choices[0].message.role,
+            name=normal_response.choices[0].message.name or "",
+            tool_calls=normal_response.choices[0].message.tool_calls or [],
+        )
+
+    async def send_chat_stream(self, chat: ChatBuilder) -> AsyncGenerator[ChatResponse]:
         """Send chat as stream."""
         # construct payload
         payload: dict[str, object] = {
             "model": chat.model,
-            "messages": [message.model_dump() for message in chat.messages],
+            "messages": [
+                message.model_dump(exclude_none=True) for message in chat.messages
+            ],
+            "tools": chat.tools,
+            "tool_choice": chat.tool_choice,
         }
         for param_key, param_value in chat.parameters.value.items():
             payload[param_key] = param_value
@@ -112,8 +133,20 @@ class ChatApi(BaseApi):
                     # remove the data: {} prefix
                     str_data = str_data.strip("data: ")
 
-                    stream_response = StreamResponse.model_validate(
-                        json.loads(str_data)
-                    )
+                    try:
+                        stream_response = StreamResponse.model_validate(
+                            json.loads(str_data)
+                        )
+                    except ValueError:
+                        raise ValueError(
+                            "Could not parse response: {}",
+                            json.dumps(json.loads(str_data), indent=4),
+                        )
 
-                    yield stream_response
+                    # parse stream response to real object
+                    yield ChatResponse(
+                        content=stream_response.choices[0].delta.content,
+                        role=stream_response.choices[0].delta.role,
+                        name=stream_response.choices[0].delta.name or "",
+                        tool_calls=stream_response.choices[0].delta.tool_calls or [],
+                    )

@@ -1,42 +1,76 @@
 """Main application."""
 
 import asyncio
+from typing import Literal
 
 from chat.chat_api import ChatApi
 from chat.chat_builder import ChatBuilder
 
-from models.vision.deepinfra.meta_llama import LLAMA4_MAVERICK_17B_128E_INSTRUCT_FP8
+from chat.tool import Tool
+from models.text_generation.deepinfra.meta_llama import (
+    LLAMA3_1_70B_INSTRUCT_TURBO,
+)
 
 # from models.tts.deepinfra.kokoro import KOKORO
 # from models.tts.deepinfra.canopylabs import ORPHEUS_3B
 from models.tts.deepinfra.sesame import SESAME
 from tts.tts_api import TTSApi
 from utils.common import (
-    convert_file_to_base64,
     save_tts_to_file,
 )
 
 
+def get_weather(city: str, unit: Literal["celsius", "fahrenheit"]) -> dict[str, str]:
+    """Get the weather of a city.
+
+    Use Api to get the weather of chosen place.
+
+    Args:
+        city: The city to get the weather of.
+        unit: The unit to return the weather in.
+
+    Returns:
+        The weather of the city.
+
+    """
+    return {"city": city, "unit": unit, "weather": "20 degrees"}
+
+
 async def test_chat():
-    """Test  chat."""
-    chat_api = ChatApi().use_tor().as_browser()
+    """Test chat."""
+    # chat_api = ChatApi().use_tor().as_browser()
 
     # use with api key
-    # chat_api = ChatApi().with_api_key("YOUR_API_KEY")
+    chat_api = ChatApi().with_api_key("API-KEY")
 
-    chat = ChatBuilder(model=LLAMA4_MAVERICK_17B_128E_INSTRUCT_FP8)
+    chat = ChatBuilder(model=LLAMA3_1_70B_INSTRUCT_TURBO)
 
     chat.add_system_message("You are a helpful assistant.")
 
-    image = await convert_file_to_base64("test.png")
+    tool = Tool(get_weather)
+    chat.add_tool(tool)
 
-    chat.add_user_message(
-        "what are the clickable elements on this image. Can you put them in a list on this format [{'text': name-of-element, 'coords': [x1, y1, x2, y2]}, {and so on}] without explanation and they should be in floats like 0.532...",
-        image_as_base64=image,
-    )
+    tools = {tool.name: tool}
 
-    response = await chat_api.send_chat(chat)
-    print(response.choices[0].message.content)
+    while True:
+        try:
+            chat.add_user_message(
+                input("User: "),
+            )
+
+            response = await chat_api.send_chat(chat)
+            if response.is_tool_call():
+                to_call = response.get_tool_calls(tools)
+                print("calling tools:", [tn.name for tn in to_call])
+                _ = await asyncio.gather(*[tool.run() for tool in to_call])
+                for called_tools in to_call:
+                    chat.add_tool_response(called_tools)
+
+                response = await chat_api.send_chat(chat)
+
+            print("Bot: ", response.content, response.is_tool_call())
+        except KeyboardInterrupt:
+            break
 
 
 async def test_tts():

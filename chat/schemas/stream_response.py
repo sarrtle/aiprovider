@@ -1,5 +1,6 @@
 """Streaming response model."""
 
+import json
 from typing import Literal
 from pydantic import BaseModel, model_validator
 
@@ -35,6 +36,8 @@ class StreamResponseChoice(BaseModel):
 class StreamResponseDelta(BaseModel):
     """Delta model."""
 
+    name: str | None = None
+    # at stream, assistant is still the role even if it is calling a tool.
     role: Literal["assistant"] = "assistant"
     content: str = ""
     tool_calls: list["StreamResponseToolCall"] | None = None
@@ -46,13 +49,19 @@ class StreamResponseDelta(BaseModel):
             values["role"] = "assistant"
         return values
 
+    @model_validator(mode="before")
+    def _content_should_not_be_null(cls, values: dict[str, object]):
+        if "content" in values and values["content"] is None:
+            values["content"] = ""
+        return values
+
 
 class StreamResponseToolCall(BaseModel):
     """Tool call model."""
 
     id: str
-    function: "StreamResponseFunction"
     type: Literal["function"]
+    function: "StreamResponseFunction"
 
 
 class StreamResponseFunction(BaseModel):
@@ -60,3 +69,11 @@ class StreamResponseFunction(BaseModel):
 
     name: str
     arguments: dict[str, object]
+
+    @model_validator(mode="before")
+    def _validate_function_arguents(cls, values: dict[str, str]):
+        if "arguments" not in values:
+            values["arguments"] = "{}"
+
+        values["arguments"] = json.loads(values["arguments"])
+        return values
